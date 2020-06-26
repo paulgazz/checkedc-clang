@@ -56,12 +56,15 @@ public:
   // For each pointer type in the declaration of D, add a variable to the 
   // constraint system for that pointer type.
   void addVariable(clang::DeclaratorDecl *D, clang::ASTContext *astContext);
+  void addVariable(clang::TypedefNameDecl*D, clang::ASTContext *astContext);
   void addCompoundLiteral(CompoundLiteralExpr *CLE, ASTContext *AstContext);
 
   // Get constraint variable for the provided Decl
   std::set<ConstraintVariable *> getVariable(clang::Decl *D,
                                              clang::ASTContext *C);
   std::set<ConstraintVariable *> getCompoundLiteral(CompoundLiteralExpr *CLE, ASTContext *C);
+
+  ConstraintVariable * getTypedefVar(clang::TypedefNameDecl *D, clang::ASTContext *C);
 
   // Retrieve a function's constraints by decl, or by name; nullptr if not found
   std::set<FVConstraint *> *getFuncConstraints(FunctionDecl *D, ASTContext *C);
@@ -115,6 +118,8 @@ private:
   // has been seen before.
   std::map<std::string, bool> ExternFunctions;
   std::map<std::string, bool> ExternGVars;
+  // Map for typedef variables
+  std::map<PersistentSourceLoc, ConstraintVariable*> typedefs;
 
   // Maps for global/static functions, global variables
   ExternalFunctionMapType ExternalFunctionFVCons;

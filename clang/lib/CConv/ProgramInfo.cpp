@@ -503,6 +503,30 @@ void ProgramInfo::specialCaseVarIntros(ValueDecl *D, ASTContext *Context) {
   }
 }
 
+void ProgramInfo::addVariable(clang::TypedefNameDecl *TDT,
+                               clang::ASTContext *astContext) { 
+  assert(!persisted);
+  PersistentSourceLoc PLoc = PersistentSourceLoc::mkPSL(TDT, *astContext);
+  assert(PLoc.valid());
+  std::set<ConstraintVariable*> &S = Variables[PLoc];
+
+  if (S.size()) 
+    return;
+  PVConstraint *P = new PVConstraint(TDT->getUnderlyingType(), nullptr, "TDT", CS,
+                                     *astContext, nullptr);
+  S.insert(P);
+  // Insert this into the typedefs map
+  typedefs[PLoc] = P;
+}
+
+ConstraintVariable* ProgramInfo::getTypedefVar(clang::TypedefNameDecl *D, 
+                                               clang::ASTContext *C) { 
+  PersistentSourceLoc PLoc = PersistentSourceLoc::mkPSL(D, *C);
+  assert(PLoc.valid());
+  return typedefs[PLoc];
+}
+
+
 // For each pointer type in the declaration of D, add a variable to the
 // constraint system for that pointer type.
 void ProgramInfo::addVariable(clang::DeclaratorDecl *D,

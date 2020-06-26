@@ -70,6 +70,18 @@ public:
               (VD->getType()->isPointerType() ||
                VD->getType()->isArrayType())) {
             Info.addVariable(VD, Context);
+            QualType QT = VD->getType();
+            const clang::Type* T = QT.getTypePtr();
+            T->dump();
+            if (const TypedefType* TDT = dyn_cast<TypedefType>(T)) { 
+              llvm::errs() << "hit\n";
+              auto D = TDT->getDecl();
+              auto TD_V = Info.getTypedefVar(D, Context);
+              auto This_V = Info.getVariable(VD, Context);
+              for (auto V : This_V) { 
+                constrainConsVarGeq(V, TD_V, Info.getConstraints(), nullptr, Same_to_Same, true, &Info);
+              }
+            }
             if (lastRecordLocation == VD->getBeginLoc().getRawEncoding()) {
               std::set<ConstraintVariable *> C = Info.getVariable(VD, Context);
               CB.constraintAllCVarsToWild(C, "Inline struct encountered.", nullptr);
@@ -351,6 +363,11 @@ public:
       }
     }
 
+    return true;
+  }
+
+  bool VisitTypedefDecl(TypedefDecl *TDT) { 
+    Info.addVariable(TDT, Context);
     return true;
   }
 
