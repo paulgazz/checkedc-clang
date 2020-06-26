@@ -46,6 +46,19 @@ void processRecordDecl(RecordDecl *Declaration, ProgramInfo &Info,
   }
 }
 
+void processTypedef(QualType QT, VarDecl *VD, ASTContext *Context, ProgramInfo *Info) { 
+  const clang::Type* T = QT.getTypePtr();
+  if (const TypedefType *TDT = dyn_cast<TypedefType>(T)) { 
+    auto D = TDT->getDecl();
+    auto TD_V = Info->getTypedefVar(D, Context);
+    auto This_V = Info->getVariable(VD, Context);
+    for (auto V : This_V) { 
+      constrainConsVarGeq(V, TD_V, Info->getConstraints(), nullptr, 
+                          Same_to_Same, true, Info);
+    }
+  }
+}
+
 // This class visits functions and adds constraints to the
 // Constraints instance assigned to it.
 // Each VisitXXX method is responsible for looking inside statements
@@ -70,18 +83,7 @@ public:
               (VD->getType()->isPointerType() ||
                VD->getType()->isArrayType())) {
             Info.addVariable(VD, Context);
-            QualType QT = VD->getType();
-            const clang::Type* T = QT.getTypePtr();
-            T->dump();
-            if (const TypedefType* TDT = dyn_cast<TypedefType>(T)) { 
-              llvm::errs() << "hit\n";
-              auto D = TDT->getDecl();
-              auto TD_V = Info.getTypedefVar(D, Context);
-              auto This_V = Info.getVariable(VD, Context);
-              for (auto V : This_V) { 
-                constrainConsVarGeq(V, TD_V, Info.getConstraints(), nullptr, Same_to_Same, true, &Info);
-              }
-            }
+            processTypedef(VD->getType(), VD, Context, &Info);
             if (lastRecordLocation == VD->getBeginLoc().getRawEncoding()) {
               std::set<ConstraintVariable *> C = Info.getVariable(VD, Context);
               CB.constraintAllCVarsToWild(C, "Inline struct encountered.", nullptr);
