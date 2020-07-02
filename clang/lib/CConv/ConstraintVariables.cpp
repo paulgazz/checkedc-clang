@@ -426,103 +426,108 @@ PointerVariableConstraint::mkString(EnvironmentMap &E,
   if (EmitName == false && hasItype() == false)
     EmittedName = true;
   uint32_t TypeIdx = 0;
-  for (const auto &V : vars) {
-    ConstAtom *C = nullptr;
-    if (ConstAtom *CA = dyn_cast<ConstAtom>(V)) {
-      C = CA;
-    } else {
-      VarAtom *VA = dyn_cast<VarAtom>(V);
-      assert(VA != nullptr && "Constraint variable can "
-                              "be either constant or VarAtom.");
-      C = E[VA].first;
-    }
-    assert(C != nullptr);
+  if (isTypedef) { 
+    Ss << typedefName;
+    EmittedBase = true;
+  } else {
+    for (const auto &V : vars) {
+      ConstAtom *C = nullptr;
+      if (ConstAtom *CA = dyn_cast<ConstAtom>(V)) {
+          C = CA;
+      } else {
+        VarAtom *VA = dyn_cast<VarAtom>(V);
+        assert(VA != nullptr && "Constraint variable can "
+                                "be either constant or VarAtom.");
+        C = E[VA].first;
+      }
+      assert(C != nullptr);
+  
+      Atom::AtomKind K = C->getKind();
 
-    Atom::AtomKind K = C->getKind();
-
-    // If this is not an itype
-    // make this wild as it can hold any pointer type.
-    if (!ForItype && BaseType == "void")
-      K = Atom::A_Wild;
-
-    switch (K) {
-      case Atom::A_Ptr:
-        getQualString(TypeIdx, Ss);
-
-        // We need to check and see if this level of variable
-        // is constrained by a bounds safe interface. If it is,
-        // then we shouldn't re-write it.
-        if (hasItype() == false) {
-          EmittedBase = false;
-          Ss << "_Ptr<";
-          CaratsToAdd++;
-          break;
-        }
-        LLVM_FALLTHROUGH;
-    case Atom::A_Arr:
-        // If this is an array.
-        getQualString(TypeIdx, Ss);
-        // If it's an Arr, then the character we substitute should
-        // be [] instead of *, IF, the original type was an array.
-        // And, if the original type was a sized array of size K.
-        // we should substitute [K].
-        if (emitArraySize(Pss, TypeIdx, EmittedName,
-                          EmittedCheckedAnnotation, false))
-          break;
-        // We need to check and see if this level of variable
-        // is constrained by a bounds safe interface. If it is,
-        // then we shouldn't re-write it.
-        if (hasItype() == false) {
-          EmittedBase = false;
-          Ss << "_Array_ptr<";
-          CaratsToAdd++;
-          break;
-        }
-        LLVM_FALLTHROUGH;
-      case Atom::A_NTArr:
-
-        if (emitArraySize(Pss, TypeIdx, EmittedName,
-                          EmittedCheckedAnnotation, true))
-          break;
-        // This additional check is to prevent fall-through from the array.
-        if (K == Atom::A_NTArr) {
-          // If this is an NTArray.
+      // If this is not an itype
+      // make this wild as it can hold any pointer type.
+      if (!ForItype && BaseType == "void")
+        K = Atom::A_Wild;
+  
+      switch (K) {
+        case Atom::A_Ptr:
           getQualString(TypeIdx, Ss);
-
+  
           // We need to check and see if this level of variable
           // is constrained by a bounds safe interface. If it is,
           // then we shouldn't re-write it.
           if (hasItype() == false) {
             EmittedBase = false;
-            Ss << "_Nt_array_ptr<";
+            Ss << "_Ptr<";
             CaratsToAdd++;
             break;
           }
-        }
-        LLVM_FALLTHROUGH;
-      // If there is no array in the original program, then we fall through to
-      // the case where we write a pointer value.
-      case Atom::A_Wild:
-        if (EmittedBase) {
-          Ss << "*";
-        } else {
-          assert(BaseType.size() > 0);
-          EmittedBase = true;
-          if (FV) {
-            Ss << FV->mkString(E);
-          } else {
-            Ss << BaseType << "*";
+          LLVM_FALLTHROUGH;
+      case Atom::A_Arr:
+          // If this is an array.
+          getQualString(TypeIdx, Ss);
+          // If it's an Arr, then the character we substitute should
+          // be [] instead of *, IF, the original type was an array.
+          // And, if the original type was a sized array of size K.
+          // we should substitute [K].
+          if (emitArraySize(Pss, TypeIdx, EmittedName,
+                            EmittedCheckedAnnotation, false))
+            break;
+          // We need to check and see if this level of variable
+          // is constrained by a bounds safe interface. If it is,
+          // then we shouldn't re-write it.
+          if (hasItype() == false) {
+            EmittedBase = false;
+            Ss << "_Array_ptr<";
+            CaratsToAdd++;
+            break;
           }
-        }
-
-        getQualString(TypeIdx, Ss);
-        break;
-      case Atom::A_Const:
-      case Atom::A_Var:
-        llvm_unreachable("impossible");
-        break;
+          LLVM_FALLTHROUGH;
+        case Atom::A_NTArr:
+  
+          if (emitArraySize(Pss, TypeIdx, EmittedName,
+                            EmittedCheckedAnnotation, true))
+            break;
+          // This additional check is to prevent fall-through from the array.
+          if (K == Atom::A_NTArr) {
+            // If this is an NTArray.
+            getQualString(TypeIdx, Ss);
+  
+            // We need to check and see if this level of variable
+            // is constrained by a bounds safe interface. If it is,
+            // then we shouldn't re-write it.
+            if (hasItype() == false) {
+              EmittedBase = false;
+              Ss << "_Nt_array_ptr<";
+              CaratsToAdd++;
+              break;
+            }
+          }
+          LLVM_FALLTHROUGH;
+        // If there is no array in the original program, then we fall through to
+        // the case where we write a pointer value.
+        case Atom::A_Wild:
+          if (EmittedBase) {
+            Ss << "*";
+          } else {
+            assert(BaseType.size() > 0);
+            EmittedBase = true;
+            if (FV) {
+              Ss << FV->mkString(E);
+            } else {
+              Ss << BaseType << "*";
+            }
+          }
+  
+          getQualString(TypeIdx, Ss);
+          break;
+        case Atom::A_Const:
+        case Atom::A_Var:
+          llvm_unreachable("impossible");
+          break;
+      }
+      TypeIdx++;
     }
-    TypeIdx++;
   }
 
   if (EmittedBase == false) {
@@ -571,6 +576,7 @@ bool PVConstraint::addArgumentConstraint(ConstraintVariable *DstCons,
   }
   return this->Parent->addArgumentConstraint(DstCons, Info);
 }
+
 
 std::set<ConstraintVariable *> &PVConstraint::getArgumentConstraints() {
   return argumentConstraints;
@@ -1011,6 +1017,12 @@ bool PointerVariableConstraint::
     }
   }
   return Ret;
+}
+
+void PointerVariableConstraint::settypedef(std::string name) { 
+  isTypedef = true;
+  typedefName = name;
+
 }
 
 void FunctionVariableConstraint::print(raw_ostream &O) const {

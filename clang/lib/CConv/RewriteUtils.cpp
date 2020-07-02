@@ -519,6 +519,21 @@ std::string TypeRewritingVisitor::getExistingIType(ConstraintVariable *DeclC) {
   return Ret;
 }
 
+bool TypeRewritingVisitor::VisitTypedefDecl(TypedefDecl *TDT) { 
+  // Get associated constraint
+  auto Defn = dyn_cast<PVConstraint>(Info.getTypedefVar(TDT, Context));
+  std::string PtypeS =
+       Defn->mkString(Info.getConstraints().getVariables(), false);
+  std::string rewrite = "typedef " + PtypeS + TDT->getNameAsString();
+  auto Range = TDT->getSourceRange();
+  Writer.ReplaceText(Range, rewrite);
+  return true;
+}
+
+bool TypeRewritingVisitor::rewriteDefn(PVConstraint Defn, std::string &type) { 
+  return false;
+}
+
 // This function checks how to re-write a function declaration.
 bool TypeRewritingVisitor::VisitFunctionDecl(FunctionDecl *FD) {
 
@@ -871,7 +886,7 @@ void RewriteConsumer::HandleTranslationUnit(ASTContext &Context) {
   RSet RewriteThese(DComp(Context.getSourceManager()));
   // Unification is done, so visit and see if we need to place any casts
   // in the program.
-  TypeRewritingVisitor TRV = TypeRewritingVisitor(&Context, Info, RewriteThese, v,
+  TypeRewritingVisitor TRV = TypeRewritingVisitor(&Context, Info, RewriteThese, R, v,
                                                   RewriteConsumer::
                                                       ModifiedFuncSignatures,
                                                   ABRewriter);

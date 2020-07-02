@@ -509,10 +509,11 @@ void ProgramInfo::addVariable(clang::TypedefNameDecl *TDT,
   PersistentSourceLoc PLoc = PersistentSourceLoc::mkPSL(TDT, *astContext);
   assert(PLoc.valid());
   std::set<ConstraintVariable*> &S = Variables[PLoc];
+  std::string name = "TDT(" + TDT->getNameAsString() + ")";
 
   if (S.size()) 
     return;
-  PVConstraint *P = new PVConstraint(TDT->getUnderlyingType(), nullptr, "TDT", CS,
+  PVConstraint *P = new PVConstraint(TDT->getUnderlyingType(), nullptr, name, CS,
                                      *astContext, nullptr);
   S.insert(P);
   // Insert this into the typedefs map

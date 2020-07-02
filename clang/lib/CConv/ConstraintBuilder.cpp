@@ -49,10 +49,13 @@ void processRecordDecl(RecordDecl *Declaration, ProgramInfo &Info,
 void processTypedef(QualType QT, VarDecl *VD, ASTContext *Context, ProgramInfo *Info) { 
   const clang::Type* T = QT.getTypePtr();
   if (const TypedefType *TDT = dyn_cast<TypedefType>(T)) { 
+    auto name = TDT->getDecl()->getNameAsString();
     auto D = TDT->getDecl();
     auto TD_V = Info->getTypedefVar(D, Context);
     auto This_V = Info->getVariable(VD, Context);
     for (auto V : This_V) { 
+      if(auto PV = dyn_cast<PVConstraint>(V))
+        PV->settypedef(name);
       constrainConsVarGeq(V, TD_V, Info->getConstraints(), nullptr, 
                           Same_to_Same, true, Info);
     }

@@ -155,13 +155,15 @@ private:
 class TypeRewritingVisitor : public RecursiveASTVisitor<TypeRewritingVisitor> {
 public:
   explicit TypeRewritingVisitor(ASTContext *C, ProgramInfo &I,
-                                RSet &DR, std::set<std::string> &V,
+                                RSet &DR, Rewriter &Writer,
+                                std::set<std::string> &V,
                                 std::map<std::string, std::string> &newFuncSig,
                                 ArrayBoundsRewriter &ArrRewriter)
-          : Context(C), Info(I), rewriteThese(DR), VisitedSet(V),
-            ModifiedFuncSignatures(newFuncSig), ABRewriter(ArrRewriter) {}
+          : Context(C), Info(I), rewriteThese(DR), Writer(Writer),
+          VisitedSet(V),ModifiedFuncSignatures(newFuncSig), ABRewriter(ArrRewriter) {}
 
   bool VisitCallExpr(CallExpr *);
+  bool VisitTypedefDecl(TypedefDecl*);
   bool VisitFunctionDecl(FunctionDecl *);
   bool isFunctionVisited(std::string FuncName);
 private:
@@ -172,9 +174,11 @@ private:
   // it will try to get it from the definition.
   std::string getExistingIType(ConstraintVariable *DeclC);
   bool anyTop(std::set<ConstraintVariable *>);
+  bool rewriteDefn(PVConstraint, std::string&);
   ASTContext            *Context;
   ProgramInfo           &Info;
   RSet                  &rewriteThese;
+  Rewriter              &Writer;
   std::set<std::string> &VisitedSet;
   std::map<std::string, std::string> &ModifiedFuncSignatures;
   ArrayBoundsRewriter   &ABRewriter;

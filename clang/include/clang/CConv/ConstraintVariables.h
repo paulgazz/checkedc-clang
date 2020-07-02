@@ -169,6 +169,8 @@ public:
 
 private:
   std::string BaseType;
+  bool isTypedef = false;
+  std::string typedefName = "";
   CAtoms vars;
   FunctionVariableConstraint *FV;
   std::map<uint32_t, Qualification> QualMap;
@@ -230,6 +232,9 @@ public:
   std::string getItype() { return ItypeStr; }
 
   bool solutionEqualTo(Constraints &CS, ConstraintVariable *CV);
+
+  // Register this variable as being a typedef'd type
+  void settypedef(std::string name);
 
   // Constructor for when we have a Decl. K is the current free
   // constraint variable index. We don't need to explicitly pass
