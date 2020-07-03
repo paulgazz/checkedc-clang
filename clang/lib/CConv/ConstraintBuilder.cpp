@@ -63,6 +63,7 @@ void processTypedef(QualType QT, VarDecl *VD, ASTContext *Context, ProgramInfo *
   }
 }
 
+
 // This class visits functions and adds constraints to the
 // Constraints instance assigned to it.
 // Each VisitXXX method is responsible for looking inside statements
