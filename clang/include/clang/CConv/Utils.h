@@ -77,6 +77,11 @@ bool isVarArgType(const std::string &TypeName);
 // Check if the variable is of a structure or union type.
 bool isStructOrUnionType(clang::VarDecl *VD);
 
+// Check if two source locations overlap
+bool contains(clang::SourceRange haystack, clang::SourceRange needle);
+
+bool isSelfContainedStruct(clang::TypedefDecl *);
+
 // Helper method to print a Type in a way that can be represented in the source.
 std::string tyToStr(const clang::Type *T);
 

@@ -180,6 +180,40 @@ bool isStructOrUnionType(clang::VarDecl *VD) {
          VD->getType().getTypePtr()->isUnionType();
 }
 
+class RecordFinder : public clang::RecursiveASTVisitor<RecordFinder> { 
+  public:
+    clang::RecordType* getFound(void) { 
+      return RT;
+    }
+
+    bool VisitRecordType(RecordType* R) { 
+      llvm::errs() << "Visitor\n";
+      R->dump();
+      RT = R;
+      return true;
+    }
+
+    bool VisitTypedefType(TypedefType *TDT) { 
+      return true;
+    }
+
+
+  private:
+    clang::RecordType *RT;
+
+};
+
+
+bool contains(clang::SourceRange haystack, clang::SourceRange needle) { 
+  return haystack.getBegin() < needle.getBegin() &&
+        needle.getEnd() < haystack.getEnd();
+}
+
+bool isSelfContainedStruct(clang::TypedefDecl *TDT) { 
+  auto T = TDT->getUnderlyingType();
+  return T->hasUnnamedOrLocalType();
+}
+
 std::string tyToStr(const clang::Type *T) {
   QualType QT(T, 0);
   return QT.getAsString();

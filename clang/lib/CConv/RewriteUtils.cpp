@@ -524,12 +524,13 @@ bool notItypeTypedef(std::string TypeS) {
   return TypeS.find(" __BoundsInterface") == std::string::npos;
 }
 
+
 bool TypeRewritingVisitor::VisitTypedefDecl(TypedefDecl *TDT) { 
   // Get associated constraint
   auto Defn = dyn_cast<PVConstraint>(Info.getTypedefVar(TDT, Context));
   std::string PtypeS =
      Defn->mkString(Info.getConstraints().getVariables(), false);
-  if (notItypeTypedef(PtypeS)) { 
+  if (notItypeTypedef(PtypeS) && !isSelfContainedStruct(TDT)) { 
     std::string rewrite = "typedef " + PtypeS + TDT->getNameAsString();
     auto Range = TDT->getSourceRange();
     Writer.ReplaceText(Range, rewrite);

@@ -350,6 +350,7 @@ private:
   ConstraintResolver CB;
 };
 
+
 // This class visits a global declaration, generating constraints
 //   for functions, variables, types, etc. that are visited
 class GlobalVisitor : public RecursiveASTVisitor<GlobalVisitor> {
@@ -379,7 +380,14 @@ public:
   }
 
   bool VisitTypedefDecl(TypedefDecl *TDT) { 
-    Info.addVariable(TDT, Context);
+    bool isContained = isSelfContainedStruct(TDT);
+    Info.addVariable(TDT, Context); 
+    if(isContained) { 
+      ConstraintVariable* CV = Info.getTypedefVar(TDT, Context);
+      std::set<ConstraintVariable*> CSet;
+      CSet.insert(CV);
+      CB.constraintAllCVarsToWild(CSet, "Self-Contained structs are WILD forn now");
+    }
     return true;
   }
 
